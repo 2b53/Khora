@@ -30,23 +30,25 @@ to be executed independently or as a full assessment workflow.
 
 ## Architecture Overview
 
-> khora-framework/
-> ├── README.md                 # <- Readme file
-> ├── client.py                 # main orchestrator
-> ├── modules/
-> │   ├── nmap_module.py        # full vuln scanning
-> │   ├── RCE_module.py         # struts2/log4shell/shellshock
-> │   ├── backdoor_module.py    # linux/windows stagers + persistence
-> │   ├── blueborne_module.py   # bluetooth RCE
-> │   ├── cracker_module.py     # hashcat NTLM/SHA/kerberos
-> │   ├── jailbreaking_module.py   # docker/k8s escapes
-> │   ├── c2_module.py          # HTTP/TCP C2 server
-> │   ├── dns_spoof_module.py   # scapy DNS poisoning
-> │   ├── sniffer_module.py     # wifi/BLE packet capture
-> │   └── eternalblue_module.py # MS17-010
-> ├── payloads/                 # generated stagers
-> ├── results/                  # results output
-> └── requirements.txt       # python dependencies
+```bash
+khora-framework/
+├── README.md                 # <- Readme file
+├── client.py                 # main orchestrator
+├── modules/
+│   ├── nmap_module.py        # full vuln scanning
+│   ├── RCE_module.py         # struts2/log4shell/shellshock
+│   ├── backdoor_module.py    # linux/windows stagers + persistence
+│   ├── blueborne_module.py   # bluetooth RCE
+│   ├── cracker_module.py     # hashcat NTLM/SHA/kerberos
+│   ├── jailbreaking_module.py   # docker/k8s escapes
+│   ├── c2_module.py          # HTTP/TCP C2 server
+│   ├── dns_spoof_module.py   # scapy DNS poisoning
+│   ├── sniffer_module.py     # wifi/BLE packet capture
+│   └── eternalblue_module.py # MS17-010
+├── payloads/                 # generated stagers
+├── results/                  # results output
+└── requirements.txt       # python dependencies
+```bash
 
 ## Module List
 
