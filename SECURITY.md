@@ -1,7 +1,7 @@
 # Khora Security Policy
 
 ## Responsible Disclosure
-Khora is committed to maintaining the security and integrity of its software. If you discover a security vulnerability, please report it responsibly by contacting the author at [insert contact email or method here]. Do **not** publicly disclose the vulnerability until it has been addressed.
+Khora is committed to maintaining the security and integrity of its software. If you discover a security vulnerability, please report it responsibly by contacting the author at [contact Discord : 2b53]. Do **not** publicly disclose the vulnerability until it has been addressed.
 
 ## Scope
 This policy applies to:
