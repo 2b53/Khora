@@ -48,7 +48,6 @@ khora-framework/
 ├── payloads/                 # generated stagers
 ├── results/                  # results output
 └── requirements.txt       # python dependencies
-```bash
 
 ## Module List
 
