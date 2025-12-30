@@ -1,19 +1,26 @@
 from scapy.all import *
+import sys
 
-class SnifferModule:
-    def __init__(self, interface):
-        self.interface = interface
+def packet_handler(pkt):
+    if pkt.haslayer(TCP) or pkt.haslayer(UDP):
+        print(f"{pkt[IP].src}:{pkt[TCP].sport} -> {pkt[IP].dst}:{pkt[TCP].dport}")
+
+def run_sniffer(interface="tun0"):
+    print(f"[+] Packet sniffer: {interface}")
+    print("[+] Press Ctrl+C to stop")
+    sniff(iface=interface, prn=packet_handler, filter="tcp or udp", store=0)
+
+def run(target, lhost, lport=4444):
+    """Khora Framework entrypoint - Network Sniffer"""
+    print(f"[+] Sniffer module: Monitoring {target} traffic")
     
-    def wifi_sniffer(self):
-        def packet_handler(pkt):
-            if pkt.haslayer(Dot11Beacon):
-                ssid = pkt[Dot11Beacon].info.decode()
-                bssid = pkt[Dot11].addr3
-                print(f"SSID: {ssid} BSSID: {bssid}")
-            elif pkt.haslayer(Dot11Auth):
-                print(f"Auth attempt: {pkt[Dot11].addr2} -> {pkt[Dot11].addr3}")
-        
-        sniff(iface=self.interface, prn=packet_handler, store=0)
+    interface = "tun0" 
+    if "linux" not in sys.platform:
+        interface = "eth0"
     
-    def ble_sniffer(self):
-        sniff(iface="hci0", filter="btle", prn=lambda x: print(x.summary()))
+    try:
+        run_sniffer(interface)
+    except KeyboardInterrupt:
+        print("\n[+] Sniffer stopped")
+    except Exception as e:
+        print(f"[!] Sniffer error: {e} (run as root)")

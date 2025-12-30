@@ -1,35 +1,33 @@
+# modules/nmap_module.py
 import subprocess
-import xml.etree.ElementTree as ET
 import os
-from pathlib import Path
 
-def run_scan(target):
-    Path("results").mkdir(exist_ok=True)
+def full_nmap_scan(target):
+    """Comprehensive Nmap recon"""
+    os.makedirs("results", exist_ok=True)
     
+    scans = [
+        # Quick ports
+        ["nmap", "-sV", "-sC", "-Pn", "-oN", "results/nmap-quick.txt", target],
+        # UDP scan
+        ["nmap", "-sU", "--top-ports", "100", "-Pn", "-oN", "results/nmap-udp.txt", target],
+        # Vuln scan
+        ["nmap", "-sV", "--script=vuln", "-oN", "results/nmap-vulns.txt", target],
+        # SMB enum
+        ["nmap", "-p445", "--script=smb*", "-oN", "results/nmap-smb.txt", target]
+    ]
     
-    subprocess.run(["nmap", "-sS", "-sV", "-oX", "results/nmap_tcp.xml", target], check=True)
+    for scan in scans:
+        try:
+            print(f"[+] Running: {' '.join(scan[-4:])}")
+            subprocess.run(scan, check=True)
+        except:
+            print(f"[!] {scan[-1]} failed/skipped")
     
-    
-    subprocess.run(["nmap", "-sU", "--top-ports", "100", "-oX", "results/nmap_udp.xml", target], check=True)
-    
-    
-    subprocess.run(["nmap", "--script", "vuln", "-oX", "results/nmap_vuln.xml", target], check=True)
-    
-    
-    subprocess.run(["nmap", "--script", "http-struts-validator", "-p80,8080", "-oX", "results/nmap_struts.xml", target], check=True)
-    
-    parse_xml_results(target)
-    print(f"[+] Nmap scans complete: results/nmap_*.txt")
+    print("[+] Nmap results: results/nmap-*.txt")
 
-def parse_xml_results(target):
-    for xml_file in Path("results").glob("nmap_*.xml"):
-        tree = ET.parse(xml_file)
-        with open(f"results/{xml_file.stem}.txt", "w") as f:
-            for host in tree.findall(".//host"):
-                ip = host.find("address").get("addr")
-                f.write(f"Host: {ip}\n")
-                for port in host.findall(".//port"):
-                    portid = port.find("portid").get("value")
-                    state = port.find("state").get("state")
-                    service = port.find(".//service").get("name", "unknown")
-                    f.write(f"  {portid}/tcp {state} {service}\n")
+def run(target, lhost, lport=4444):
+    """Khora Framework entrypoint - Nmap Recon"""
+    print(f"[+] Nmap module: Full recon on {target}")
+    full_nmap_scan(target)
+    print("[+] Recon complete: results/nmap-*.txt")
