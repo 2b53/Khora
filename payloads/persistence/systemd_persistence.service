@@ -1,0 +1,13 @@
+[Unit]
+Description=System Update Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/python3 /opt/update.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

