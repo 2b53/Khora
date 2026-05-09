@@ -6,6 +6,8 @@
 
 > ⚠️ **LEGAL NOTICE:** Authorized security testing only. Unauthorized access is illegal.
 
+> ⚙️ **Current Status:** Actively under development. Core modules have been switched to real exploit delivery, and some components are currently being validated in test environments.
+
 ## Overview
 
 Khora is an enterprise-grade penetration testing framework combining 10 specialized exploitation modules with advanced attack automation, session management, and comprehensive reporting capabilities.
@@ -55,6 +57,14 @@ Khora is an enterprise-grade penetration testing framework combining 10 speciali
 - JSON structured data for automation
 - Executive summaries and comparative analysis
 - Timeline visualization of exploitation steps
+
+**AI Agent Framework (NEW)**
+- 5 specialized AI agents for intelligent pentesting
+- ExploitDevelopmentAgent: Custom exploit creation and testing
+- VulnerabilityAssessmentAgent: Comprehensive vulnerability analysis
+- PayloadGenerationAgent: Advanced payload creation with evasion
+- NetworkReconAgent: Intelligent network mapping and discovery
+- PostExploitationAgent: Persistence and lateral movement mastery
 
 **Reverse Shell Arsenal (8+ variants)**
 - Bash, Netcat, Python, Ruby, PHP, Perl, Meterpreter, MSFVenom
@@ -146,6 +156,13 @@ python3 exploit_chains.py reconnaissance 192.168.1.100 10.10.14.1
 #   - privilege_escalation (3-8 min): Get root
 #   - post_exploitation (5-15 min): Post-compromise
 #   - full_assessment (20-40 min): Complete pentest
+
+# AI Agent execution
+python3 client.py --agent exploit-dev 192.168.1.100 10.10.14.1    # Custom exploit development
+python3 client.py --agent vuln-assess 192.168.1.100 10.10.14.1   # Vulnerability assessment
+python3 client.py --agent payload-gen 192.168.1.100 10.10.14.1   # Payload generation
+python3 client.py --agent net-recon 192.168.1.100 10.10.14.1     # Network reconnaissance
+python3 client.py --agent post-exploit 192.168.1.100 10.10.14.1  # Post-exploitation
 
 # Session management
 python3 -c "

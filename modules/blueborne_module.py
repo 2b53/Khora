@@ -43,69 +43,112 @@ class BlueborneModule:
         Path("results").mkdir(exist_ok=True)
     
     def discover_devices(self):
-        """Discover Bluetooth devices using BLE scanner"""
+        """Discover Bluetooth devices using BLE and classic Bluetooth scanning."""
         print(f"\n[*] Discovering Bluetooth devices...")
-        
-        if not BLEAK_AVAILABLE:
-            print("  [!] bleak not installed - pip install bleak")
-            logger.warning("bleak not available")
+        found = []
+
+        if BLEAK_AVAILABLE:
+            try:
+                async def scan():
+                    return await BleakScanner.discover()
+
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                devices = loop.run_until_complete(scan())
+                print(f"  [✓] BLE found {len(devices)} devices")
+                for device in devices:
+                    found.append({
+                        'name': device.name or 'Unknown',
+                        'address': device.address,
+                        'rssi': device.rssi,
+                        'type': 'BLE'
+                    })
+                logger.info(f"BLE discovery found {len(devices)} devices")
+            except Exception as e:
+                logger.warning(f"BLE discovery failed: {e}")
+                print(f"  [!] BLE scan error: {e}")
+
+        if BLUETOOTH_AVAILABLE:
+            try:
+                classic = bluetooth.discover_devices(duration=8, lookup_names=True)
+                print(f"  [✓] Classic Bluetooth found {len(classic)} devices")
+                for addr, name in classic:
+                    if any(d['address'] == addr for d in found):
+                        continue
+                    found.append({'name': name or 'Unknown', 'address': addr, 'rssi': None, 'type': 'Classic'})
+                logger.info(f"Classic Bluetooth discovery found {len(classic)} devices")
+            except Exception as e:
+                logger.warning(f"Classic discovery failed: {e}")
+                print(f"  [!] Classic discovery error: {e}")
+
+        if not found:
+            print("  [!] No Bluetooth devices discovered. Ensure adapter availability and permissions.")
             return
-        
-        try:
-            async def scan():
-                devices = await BleakScanner.discover()
-                return devices
-            
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            devices = loop.run_until_complete(scan())
-            
-            print(f"  [✓] Found {len(devices)} Bluetooth devices\n")
-            
-            for device in devices:
-                print(f"    Device: {device.name}")
-                print(f"      Address: {device.address}")
-                print(f"      RSSI: {device.rssi}")
-                
-                self.discovered_devices.append({
-                    'name': device.name,
-                    'address': device.address,
-                    'rssi': device.rssi
-                })
-                self.results['devices_found'] += 1
-            
-            logger.info(f"Discovered {len(devices)} devices")
-            
-        except Exception as e:
-            logger.error(f"Device discovery failed: {e}")
-            print(f"  [!] Error: {e}")
+
+        print(f"\n  [✓] Total discovered devices: {len(found)}\n")
+        for device in found:
+            print(f"    Device: {device['name']}")
+            print(f"      Address: {device['address']}")
+            print(f"      Type: {device['type']}")
+            if device['rssi'] is not None:
+                print(f"      RSSI: {device['rssi']}")
+            self.discovered_devices.append(device)
+            self.results['devices_found'] += 1
+
+        logger.info(f"Discovered {len(found)} Bluetooth devices")
     
     def scan_vulnerabilities(self):
-        """Scan discovered devices for known vulnerabilities"""
+        """Scan discovered devices for known vulnerability indicators."""
         print(f"\n[*] Scanning for vulnerabilities...")
-        
-        cve_checks = {
-            'CVE-2017-0785': 'L2CAP buffer overflow',
-            'CVE-2017-0786': 'Authentication bypass',
-            'CVE-2017-14289': 'Heap overflow'
+        known_signatures = {
+            'L2CAP': 'Potential CVE-2017-0785 target',
+            'OBEX': 'Potential BlueBorne vector',
+            'RFCOMM': 'Bluetooth serial profile exposed',
+            'HID': 'Human interface profile exposed'
         }
-        
+
         for device in self.discovered_devices:
-            print(f"\n  Checking: {device['address']}")
-            
-            for cve, description in cve_checks.items():
-                # Simulate vulnerability check
-                vuln_score = abs(hash(device['address'])) % 100
-                
-                if vuln_score > 70:  # High probability
-                    print(f"    [!] {cve} - {description}")
+            print(f"\n  Checking: {device['address']} ({device['type']})")
+            services = []
+
+            if BLUETOOTH_AVAILABLE and device['type'] == 'Classic':
+                try:
+                    found_services = bluetooth.find_service(address=device['address'])
+                    for svc in found_services:
+                        service_name = svc.get('name') or svc.get('service-classes', '')
+                        proto = svc.get('protocol') or ''
+                        services.append(service_name.upper())
+                        services.append(proto.upper())
+                except Exception as e:
+                    logger.debug(f"Service enumeration failed for {device['address']}: {e}")
+
+            if not services and device['type'] == 'BLE' and BLEAK_AVAILABLE:
+                services.append('BLE_DEVICE')
+
+            discovered = False
+            for signature, description in known_signatures.items():
+                if any(signature in s for s in services):
+                    print(f"    [!] {description} detected")
                     self.vulnerable_devices.append({
                         'address': device['address'],
-                        'cve': cve,
+                        'cve': 'CVE-2017-0785',
+                        'details': description,
+                        'services': services,
                         'vulnerable': True
                     })
                     self.results['vulnerable'] += 1
-                    logger.warning(f"Vulnerable: {device['address']} - {cve}")
+                    logger.warning(f"Vulnerable: {device['address']} - {description}")
+                    discovered = True
+                    break
+
+            if not discovered:
+                if device['type'] == 'BLE':
+                    print(f"    [i] BLE device discovered. Manual analysis required for service-level exploits.")
+                else:
+                    print(f"    [i] No matching vulnerable service signatures found.")
+
+            if services:
+                print(f"      Services: {', '.join(set(services))}")
     
     def blueborne_l2cap_attack(self, bt_addr):
         """CVE-2017-0785 L2CAP buffer overflow attack"""
@@ -147,9 +190,9 @@ class BlueborneModule:
         """Send malicious BLE advertisement"""
         print(f"  [*] Sending BLE advertisement...")
         
-        # BLE advertisement with potential payload injection
+        payload_bytes = payload if isinstance(payload, bytes) else payload.encode(errors='ignore')
         ble_payload = b'\x02\x01\x06'  # Flags
-        ble_payload += b'\x05\x09' + payload[:5].encode()
+        ble_payload += b'\x05\x09' + payload_bytes[:5]
         
         if BLEAK_AVAILABLE:
             print(f"    [+] BLE payload: {ble_payload.hex()}")

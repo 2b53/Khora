@@ -18,6 +18,9 @@ from pathlib import Path
 from datetime import datetime
 import json
 
+from sessions import SessionManager
+from exploit_chains import list_attack_profiles, load_chain_profile, ATTACK_PROFILES
+
 # Setup
 MODULE_DIR = Path("modules")
 RESULTS_DIR = Path("results")
@@ -61,7 +64,9 @@ MODULE_INFO = {
     'c2': {'desc': 'Command & Control Server', 'type': 'C2', 'critical': True},
     'dns_spoof': {'desc': 'DNS Poisoning & Spoofing', 'type': 'Network', 'critical': False},
     'sniffer': {'desc': 'Packet Capture & Analysis', 'type': 'Recon', 'critical': False},
-    'eternalblue': {'desc': 'MS17-010 SMB Exploitation', 'type': 'SMB', 'critical': True}
+    'eternalblue': {'desc': 'MS17-010 SMB Exploitation', 'type': 'SMB', 'critical': True},
+    'dirtycow': {'desc': 'Dirty COW local privilege escalation exploit', 'type': 'Privesc', 'critical': False},
+    'agent': {'desc': 'Agent payload generation & beacon implant tooling', 'type': 'Agent', 'critical': False}
 }
 
 def print_banner():
@@ -180,7 +185,12 @@ EXAMPLES:
     parser.add_argument("target", nargs='?', help="Target IP address")
     parser.add_argument("lhost", nargs='?', help="LHOST (listener address)")
     parser.add_argument("-m", "--module", help="Execute specific module")
+    parser.add_argument("--chain", help="Execute a pre-built attack chain")
+    parser.add_argument("--list-chains", action="store_true", help="List available attack chains")
     parser.add_argument("-p", "--port", type=int, default=4444, help="LPORT (default: 4444)")
+    parser.add_argument("--session", help="Reuse existing session ID")
+    parser.add_argument("--assessor", default="Khora", help="Assessor name for session metadata")
+    parser.add_argument("--agent", help="Execute AI agent (exploit-dev, vuln-assess, payload-gen, net-recon, post-exploit)")
     parser.add_argument("--list", action="store_true", help="List available modules")
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     parser.add_argument("--sequential", action="store_true", help="Run modules sequentially")
@@ -192,11 +202,47 @@ EXAMPLES:
     if args.list:
         list_modules()
         return
+
+    # Handle --list-chains
+    if args.list_chains:
+        list_attack_profiles()
+        return
+
+    # Handle --agent
+    if args.agent:
+        agent_map = {
+            'exploit-dev': 'ExploitDevelopmentAgent',
+            'vuln-assess': 'VulnerabilityAssessmentAgent',
+            'payload-gen': 'PayloadGenerationAgent',
+            'net-recon': 'NetworkReconAgent',
+            'post-exploit': 'PostExploitationAgent'
+        }
+        if args.agent not in agent_map:
+            logger.error(f"Unknown agent: {args.agent}")
+            print(f"Available agents: {', '.join(agent_map.keys())}")
+            return
+
+        logger.info(f"Executing AI agent: {agent_map[args.agent]}")
+        # TODO: Implement agent execution logic
+        print(f"[!] Agent {agent_map[args.agent]} execution not yet implemented")
+        print("   This will be added in the next development phase")
+        return
     
     # Validate required arguments
     if not args.target or not args.lhost:
         parser.print_help()
         return
+
+    # Session management
+    session_manager = SessionManager()
+    if args.session and session_manager.get_session(args.session):
+        session_id = args.session
+        session_manager.start_session(session_id)
+    else:
+        session_id = session_manager.create_session(args.target, args.assessor)
+        session_manager.start_session(session_id)
+
+    logger.info(f"Session ID: {session_id}")
     
     # Validate IP format
     if not validate_ip(args.target) or not validate_ip(args.lhost):
@@ -218,6 +264,23 @@ EXAMPLES:
         success = execute_module(args.module, args.target, args.lhost, args.port)
         modules_run = [args.module]
         success_count = 1 if success else 0
+        session_manager.log_module_execution(args.module, 'success' if success else 'failed')
+    elif args.chain:
+        if args.chain not in ATTACK_PROFILES:
+            logger.error(f"Unknown chain profile: {args.chain}")
+            print(f"Unknown chain profile: {args.chain}")
+            return
+
+        chain = load_chain_profile(args.chain, args.target, args.lhost, args.port)
+        logger.info(f"Executing chain: {args.chain}")
+        result = chain.execute()
+        chain.save_chain()
+
+        modules_run = list(result['results'].keys())
+        success_count = result['successful']
+
+        for module_name, step in result['results'].items():
+            session_manager.log_module_execution(module_name, step['status'], step)
     else:
         # Full chain execution
         logger.info("Running full security assessment...")
@@ -226,9 +289,11 @@ EXAMPLES:
         
         if args.sequential:
             for module_name in modules:
-                if execute_module(module_name, args.target, args.lhost, args.port):
+                success = execute_module(module_name, args.target, args.lhost, args.port)
+                if success:
                     success_count += 1
                 modules_run.append(module_name)
+                session_manager.log_module_execution(module_name, 'success' if success else 'failed')
         else:
             with ThreadPoolExecutor(max_workers=args.workers) as executor:
                 futures = {
@@ -239,10 +304,13 @@ EXAMPLES:
                 for future in as_completed(futures):
                     module_name = futures[future]
                     try:
-                        if future.result():
+                        success = future.result()
+                        if success:
                             success_count += 1
+                        session_manager.log_module_execution(module_name, 'success' if success else 'failed')
                     except Exception as e:
                         logger.error(f"Exception in {module_name}: {e}")
+                        session_manager.log_module_execution(module_name, 'failed', {'error': str(e)})
                     modules_run.append(module_name)
     
     end_time = datetime.now()
@@ -267,6 +335,7 @@ EXAMPLES:
     print(f"Report:           {report_file}")
     print("="*70 + "\n")
     
+    session_manager.end_session(session_id)
     logger.info(f"Assessment complete")
 
 if __name__ == "__main__":

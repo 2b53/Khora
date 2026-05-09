@@ -18,7 +18,8 @@ from importlib.util import spec_from_file_location, module_from_spec
 MODULE_DIR = Path("modules")
 MODULES_TO_TEST = [
     'nmap', 'rce', 'backdoor', 'blueborne', 'cracker',
-    'jailbreak', 'c2', 'dns_spoof', 'sniffer', 'eternalblue'
+    'jailbreak', 'c2', 'dns_spoof', 'sniffer', 'eternalblue',
+    'dirtycow', 'agent'
 ]
 
 def test_environment():
