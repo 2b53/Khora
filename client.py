@@ -190,7 +190,6 @@ EXAMPLES:
     parser.add_argument("-p", "--port", type=int, default=4444, help="LPORT (default: 4444)")
     parser.add_argument("--session", help="Reuse existing session ID")
     parser.add_argument("--assessor", default="Khora", help="Assessor name for session metadata")
-    parser.add_argument("--agent", help="Execute AI agent (exploit-dev, vuln-assess, payload-gen, net-recon, post-exploit)")
     parser.add_argument("--list", action="store_true", help="List available modules")
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     parser.add_argument("--sequential", action="store_true", help="Run modules sequentially")
@@ -208,26 +207,6 @@ EXAMPLES:
         list_attack_profiles()
         return
 
-    # Handle --agent
-    if args.agent:
-        agent_map = {
-            'exploit-dev': 'ExploitDevelopmentAgent',
-            'vuln-assess': 'VulnerabilityAssessmentAgent',
-            'payload-gen': 'PayloadGenerationAgent',
-            'net-recon': 'NetworkReconAgent',
-            'post-exploit': 'PostExploitationAgent'
-        }
-        if args.agent not in agent_map:
-            logger.error(f"Unknown agent: {args.agent}")
-            print(f"Available agents: {', '.join(agent_map.keys())}")
-            return
-
-        logger.info(f"Executing AI agent: {agent_map[args.agent]}")
-        # TODO: Implement agent execution logic
-        print(f"[!] Agent {agent_map[args.agent]} execution not yet implemented")
-        print("   This will be added in the next development phase")
-        return
-    
     # Validate required arguments
     if not args.target or not args.lhost:
         parser.print_help()
