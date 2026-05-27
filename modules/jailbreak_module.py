@@ -282,7 +282,7 @@ int main() {
     def run(self):
         """Execute jailbreak chain"""
         print(f"\n{'='*70}")
-        print("JAILBREAK MODULE - CONTAINER & PRIVESC EVASION".center(70))
+        print("PRIVILEGE ESCALATION MODULE".center(70))
         print('='*70 + "\n")
         
         logger.info(f"Jailbreak module started for {self.target}")
@@ -304,15 +304,15 @@ int main() {
         self.save_results()
         
         print(f"\n{'='*70}")
-        print(f"Jailbreak Module Complete".center(70))
-        print(f"Exploits in: exploits/ | Results: results/".center(70))
+        print("PRIVILEGE ESCALATION REVIEW COMPLETE".center(70))
+        print("Artifacts: exploits/ | Results: results/".center(70))
         print('='*70 + "\n")
 
 def run(target, lhost, lport=4444):
     """Khora Framework entrypoint - Jailbreak Module"""
     
     print(f"[*] Target: {target}")
-    print(f"[*] C2 Server: {lhost}:{lport}\n")
+    print(f"[*] Listener: {lhost}:{lport}\n")
     
     logger.info(f"Jailbreak module for {target}")
     

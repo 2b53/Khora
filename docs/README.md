@@ -1,6 +1,6 @@
 # Khora Documentation Portal
 
-This directory contains the maintained project documentation for Khora.
+This directory contains the maintained operator and implementation documentation for Khora.
 
 ## Reading Order
 
@@ -11,11 +11,12 @@ This directory contains the maintained project documentation for Khora.
 5. `CHANGELOG.md`
 6. `SECURITY.md`
 
-## What Changed In This Documentation Pass
+## Documentation Focus
 
-- Removed the agent layer again so the docs match the actual pentest client
-- Aligned CLI examples with the current `client.py` behavior
-- Kept the focus on modules, chains, sessions, reports, and payload artifacts
+- current CLI behavior
+- active modules and chain profiles
+- local setup and troubleshooting
+- reporting, sessions, and generated artifacts
 
 ## Document Map
 

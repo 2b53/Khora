@@ -8,6 +8,11 @@
 
 Optional tools depend on which modules you plan to inspect or test locally.
 
+Common optional tools:
+
+- `nmap` for network discovery modules
+- `nuclei` for template-based web and service assessment
+
 ## Basic Setup
 
 ```bash
@@ -27,6 +32,16 @@ python client.py --list
 ```
 
 If that succeeds, the top-level CLI is reachable and the module registry loads.
+
+## Optional Assessment Tooling
+
+If you want to use the `nuclei` module, install the official `nuclei` binary and ensure it is available in `PATH`.
+
+You can optionally point Khora to a specific template directory with:
+
+```bash
+KHORA_NUCLEI_TEMPLATES=/path/to/nuclei-templates
+```
 
 ## Environment Notes From This Review
 

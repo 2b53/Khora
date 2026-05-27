@@ -33,4 +33,4 @@ Include:
 
 ## Current Review Outcome
 
-During the latest documentation pass, the project docs were updated to clearly separate implemented behavior from planned agent functionality.
+The project documentation is expected to match the reachable CLI, active module set, and local artifact flow.

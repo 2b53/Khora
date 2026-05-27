@@ -15,12 +15,10 @@ import datetime
 from pathlib import Path
 from importlib.util import spec_from_file_location, module_from_spec
 
+from client import MODULE_INFO, MODULE_FILENAMES
+
 MODULE_DIR = Path("modules")
-MODULES_TO_TEST = [
-    'nmap', 'rce', 'backdoor', 'blueborne', 'cracker',
-    'jailbreak', 'c2', 'dns_spoof', 'sniffer', 'eternalblue',
-    'dirtycow', 'agent'
-]
+MODULES_TO_TEST = list(MODULE_INFO.keys())
 
 def test_environment():
     """Test system environment"""
@@ -59,7 +57,7 @@ def test_module_loading():
     results = {}
     for module_name in MODULES_TO_TEST:
         try:
-            module_file = MODULE_DIR / f"{module_name}_module.py"
+            module_file = MODULE_DIR / MODULE_FILENAMES.get(module_name, f"{module_name}_module.py")
             
             if not module_file.exists():
                 print(f"[✗ FAIL] {module_name:15} - File not found: {module_file}")

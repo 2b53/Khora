@@ -214,7 +214,7 @@ exploit
     def run(self):
         """Execute EternalBlue exploitation chain"""
         print(f"\n{'='*70}")
-        print("ETERNALBLUE MODULE - MS17-010 SMB EXPLOITATION".center(70))
+        print("MS17-010 ASSESSMENT MODULE".center(70))
         print('='*70 + "\n")
         
         logger.info(f"EternalBlue module started for {self.target}")
@@ -242,7 +242,7 @@ exploit
         self.save_results()
         
         print(f"\n{'='*70}")
-        print(f"EternalBlue Module Complete".center(70))
+        print("MS17-010 ASSESSMENT COMPLETE".center(70))
         print('='*70 + "\n")
 
 def run(target, lhost, lport=4444):

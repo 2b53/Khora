@@ -14,6 +14,12 @@ python client.py --list-chains
 python client.py <target> <lhost> -m <module>
 ```
 
+Example:
+
+```bash
+python client.py 192.168.1.10 10.10.14.1 -m nuclei
+```
+
 ## Framework Controls
 
 ```bash
@@ -22,6 +28,12 @@ python client.py <target> <lhost> --workers 3
 python client.py <target> <lhost> --chain <profile>
 python client.py <target> <lhost> --session <session_id>
 ```
+
+Useful chain profiles now include:
+
+- `reconnaissance`
+- `web_assessment`
+- `full_assessment`
 
 ## Session And Reporting Files
 

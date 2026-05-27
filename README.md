@@ -1,21 +1,29 @@
-# Khora v2.1
+# Khora Framework v2.1
 
-Khora is a Python-based security testing framework with pluggable modules, session tracking, attack-chain execution, and reporting.
+Khora is a Python-based assessment framework for module-driven security validation, session tracking, chain execution, and reporting.
 
-## Current Status
+## Framework Scope
 
-- `client.py` provides the main CLI, module loading, chain execution, logging, and session reports.
-- `modules/` contains the current module entry points used by the framework.
-- `exploit_chains.py` provides pre-built chain profiles.
-- Documentation has been aligned to the actual client and module structure.
+- `client.py` provides the primary operator CLI.
+- `modules/` contains the active module entry points.
+- `exploit_chains.py` provides reusable chain profiles.
+- `sessions.py` persists assessment state and module execution history.
+- `reporting.py` generates structured assessment output.
 
-## Implemented Framework Areas
+## Operating Model
 
-- Module discovery and execution through `client.py`
-- Session lifecycle management in `sessions.py`
-- JSON session reporting in `client.py`
-- Standalone report generation helpers in `reporting.py`
-- Attack chain profile loading through `exploit_chains.py`
+- Discover available modules and chain profiles from the CLI.
+- Run a single module, a named chain, or the full module set.
+- Persist execution history in local session artifacts.
+- Export JSON results for later reporting workflows.
+
+## Current Characteristics
+
+- Dynamic module loading with support for legacy filename drift such as `RCE_module.py`
+- Session lifecycle handling with resumable session IDs
+- Local logging and result directories created on demand
+- Template-based assessment support through the `nuclei` module
+- Documentation aligned to the currently reachable client surface
 
 ## Repository Layout
 
@@ -40,7 +48,7 @@ Khora/
 1. Create and activate a Python 3.8+ virtual environment.
 2. Install dependencies from `requirements.txt`.
 3. Run `python client.py --list` to verify the CLI loads.
-4. Review `docs/setup.md` and `docs/QUICKSTART.md` for the documented project workflow.
+4. Review `docs/setup.md` and `docs/QUICKSTART.md` for the documented workflow.
 
 ## Documentation
 
@@ -54,4 +62,4 @@ Khora/
 
 ## Safety and Scope
 
-Use this project only in environments you own or where you have explicit written authorization. The documentation in this repository is intended to describe the framework and its current code state, not to provide operational attack playbooks.
+Use this project only in environments you own or where you have explicit written authorization. The repository documents the framework implementation and operator workflow, not offensive playbooks.

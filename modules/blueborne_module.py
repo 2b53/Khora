@@ -244,7 +244,7 @@ class BlueborneModule:
     def run(self):
         """Execute BlueBorne exploitation"""
         print(f"\n{'='*70}")
-        print("BLUEBORNE MODULE - BLUETOOTH EXPLOITATION".center(70))
+        print("BLUETOOTH ASSESSMENT MODULE".center(70))
         print('='*70 + "\n")
         
         logger.info("BlueBorne module started")
@@ -277,7 +277,7 @@ class BlueborneModule:
         self.save_results()
         
         print(f"\n{'='*70}")
-        print(f"BlueBorne Module Complete - {self.results['exploits_sent']} exploits".center(70))
+        print(f"BLUETOOTH ASSESSMENT COMPLETE - {self.results['exploits_sent']} actions".center(70))
         print('='*70 + "\n")
 
 def run(target, lhost, lport=4444):

@@ -24,7 +24,6 @@ Some generated artifacts referenced elsewhere in older docs may not be present i
 ## Current Code Sources
 
 - `modules/backdoor_module.py`
-- `modules/agent_module.py`
 - `generate_payloads.py`
 - `modules/c2_module.py`
 

@@ -228,7 +228,7 @@ def command_injection_exploit(target, lhost, lport):
 def run(target, lhost, lport=4444):
     """Khora Framework entrypoint - RCE Module"""
     print(f"\n{'='*70}")
-    print("RCE MODULE - Remote Code Execution".center(70))
+    print("REMOTE EXECUTION MODULE".center(70))
     print('='*70)
     print(f"Target: {target}")
     print(f"Listener: {lhost}:{lport}\n")
@@ -254,7 +254,7 @@ def run(target, lhost, lport=4444):
             logger.error(f"{exploit_name} failed: {e}")
     
     print(f"\n{'='*70}")
-    print(f"RCE Module Complete - {success_count} tries".center(70))
+    print(f"REMOTE EXECUTION REVIEW COMPLETE - {success_count} checks".center(70))
     print('='*70 + "\n")
     
     logger.info(f"RCE module completed")

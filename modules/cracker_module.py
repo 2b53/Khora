@@ -259,7 +259,7 @@ class CrackerModule:
     def run(self, hash_file="hashes.txt", wordlist=None):
         """Execute hash cracking"""
         print(f"\n{'='*70}")
-        print("CRACKER MODULE - HASH DICTIONARY ATTACK".center(70))
+        print("CREDENTIAL ANALYSIS MODULE".center(70))
         print('='*70 + "\n")
         
         logger.info(f"Cracker module started for {self.target}")
@@ -274,13 +274,14 @@ class CrackerModule:
         self.save_results()
         
         print(f"\n{'='*70}")
-        print(f"Hash Cracking Complete - Check results/".center(70))
+        print("CREDENTIAL ANALYSIS COMPLETE".center(70))
+        print("Results saved to: results/".center(70))
         print('='*70 + "\n")
 
 def run(target, lhost, lport=4444):
     """Khora Framework entrypoint - Cracker Module"""
     
-    print(f"[*] Hash Cracking Module")
+    print(f"[*] Credential analysis module")
     print(f"[*] Target: {target}\n")
     
     cracker = CrackerModule(target, lhost, lport)
