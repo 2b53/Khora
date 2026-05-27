@@ -10,6 +10,7 @@
 - Reworked `nmap`, `backdoor`, `c2`, `RCE`, and `jailbreak` module output toward a cleaner framework presentation
 - Reworked `blueborne`, `cracker`, `dirtycow`, and `eternalblue` module output to match the same framework surface
 - Added a `nuclei` module with JSONL parsing, Khora summaries, and chain integration for legitimate template-based assessments
+- Added a shared Khora findings bundle schema and integrated it into `nmap` and `nuclei`
 
 ## 2026-05-18
 

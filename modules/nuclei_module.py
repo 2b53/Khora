@@ -10,6 +10,8 @@ import os
 import shutil
 import subprocess
 
+from finding_schema import make_finding, write_bundle
+
 logger = logging.getLogger("Khora.Nuclei")
 
 RESULTS_DIR = Path("results")
@@ -68,10 +70,11 @@ def run_nuclei_scan(targets_file, output_file):
 def parse_jsonl(output_file):
     """Parse nuclei JSONL output into summary data."""
     findings = []
+    normalized_findings = []
     severities = {}
 
     if not output_file.exists():
-        return findings, severities
+        return findings, normalized_findings, severities
 
     with open(output_file, "r") as handle:
         for line in handle:
@@ -98,8 +101,28 @@ def parse_jsonl(output_file):
                     "type": entry.get("type"),
                 }
             )
+            normalized_findings.append(
+                make_finding(
+                    module="nuclei",
+                    title=info.get("name") or entry.get("template-id") or "Nuclei finding",
+                    severity=severity,
+                    category=entry.get("type") or "web",
+                    target=entry.get("host") or entry.get("matched-at"),
+                    description=info.get("description"),
+                    evidence={
+                        "template_id": entry.get("template-id"),
+                        "matched_at": entry.get("matched-at"),
+                        "matcher_name": entry.get("matcher-name"),
+                    },
+                    references=info.get("reference") or [],
+                    metadata={
+                        "host": entry.get("host"),
+                        "type": entry.get("type"),
+                    },
+                )
+            )
 
-    return findings, severities
+    return findings, normalized_findings, severities
 
 
 def write_summary(target, targets, command_result, findings, severities, timestamp):
@@ -172,9 +195,18 @@ def run(target, lhost, lport=4444):
         logger.error(str(exc))
         return
 
-    findings, severities = parse_jsonl(output_file)
+    findings, normalized_findings, severities = parse_jsonl(output_file)
     summary_file = write_summary(target, targets, command_result, findings, severities, timestamp)
+    bundle_file = write_bundle(
+        module="nuclei",
+        target=target,
+        findings=normalized_findings,
+        timestamp=timestamp,
+        source_files=[str(targets_file), str(output_file), str(summary_file)],
+        metadata={"targets": targets, "severities": severities, "returncode": command_result["returncode"]},
+    )
     print_summary(targets, findings, severities, output_file, summary_file)
+    print(f"Bundle:     {bundle_file}\n")
 
     if command_result["returncode"] not in (0,):
         logger.warning(f"Nuclei exited with code {command_result['returncode']}")

@@ -8,6 +8,8 @@ import logging
 import os
 import subprocess
 
+from finding_schema import make_finding, write_bundle
+
 logger = logging.getLogger("Khora.Nmap")
 
 
@@ -144,6 +146,44 @@ def parse_nmap_results(target):
         print("\nFull results available in: results/")
 
 
+def normalize_nmap_summary(target, summary_file):
+    """Convert the scan summary into normalized Khora findings."""
+    with open(summary_file, "r") as handle:
+        summary = json.load(handle)
+
+    findings = []
+    for scan in summary.get("scans", []):
+        status = scan.get("status", "UNKNOWN").lower()
+        severity = "info"
+        if status == "failed":
+            severity = "medium"
+        elif status == "timeout":
+            severity = "low"
+
+        findings.append(
+            make_finding(
+                module="nmap",
+                title=scan.get("scan", "Nmap scan"),
+                severity=severity,
+                category="recon",
+                target=target,
+                description=f"Nmap scan status: {scan.get('status', 'UNKNOWN')}",
+                evidence={"output": scan.get("output")},
+                metadata={"status": scan.get("status")},
+            )
+        )
+
+    timestamp = summary.get("timestamp", datetime.now().strftime("%Y%m%d_%H%M%S"))
+    return write_bundle(
+        module="nmap",
+        target=target,
+        findings=findings,
+        timestamp=timestamp,
+        source_files=[summary_file],
+        metadata={"scan_count": len(summary.get("scans", []))},
+    )
+
+
 def generate_assessment_notes(target):
     """Print follow-up notes for common service categories."""
     notes = f"""
@@ -195,13 +235,16 @@ def run(target, lhost, lport=4444):
 
     logger.info(f"Starting reconnaissance scan on {target}")
 
-    full_nmap_scan(target)
+    summary_file = full_nmap_scan(target)
     parse_nmap_results(target)
     generate_assessment_notes(target)
+    bundle_file = normalize_nmap_summary(target, summary_file)
 
     print("\n" + "=" * 70)
     print("RECON COMPLETE".center(70))
     print("Results saved to: results/".center(70))
+    print(f"Summary: {summary_file}".center(70))
+    print(f"Bundle:  {bundle_file}".center(70))
     print("=" * 70 + "\n")
 
     logger.info(f"Nmap module complete for {target}")

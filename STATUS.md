@@ -10,6 +10,7 @@
 - Operator-facing text is being aligned to a consistent Khora framework presentation.
 - Module loading now accounts for the legacy `RCE_module.py` filename in both the CLI and chain execution paths.
 - A `nuclei` assessment module is available for template-based web and service checks with JSONL result capture.
+- `nmap` and `nuclei` can emit normalized Khora findings bundles for later reporting.
 - `python` still was not available as a working interpreter in the current shell `PATH`, so dynamic verification remained limited.
 
 ## Working Areas

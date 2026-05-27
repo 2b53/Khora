@@ -40,6 +40,7 @@ Useful chain profiles now include:
 - `logs/`: runtime logs
 - `results/`: session JSON output
 - `sessions/`: persisted session data
+- `results/*_findings_bundle_*.json`: normalized Khora findings bundles
 
 ## Useful Files
 

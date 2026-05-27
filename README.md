@@ -23,6 +23,7 @@ Khora is a Python-based assessment framework for module-driven security validati
 - Session lifecycle handling with resumable session IDs
 - Local logging and result directories created on demand
 - Template-based assessment support through the `nuclei` module
+- Normalized findings bundles for downstream reporting and correlation
 - Documentation aligned to the currently reachable client surface
 
 ## Repository Layout
